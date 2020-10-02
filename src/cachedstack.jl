@@ -1,7 +1,5 @@
-
-
 """
-    CachedStack(parent; loaded=Dict{Symbol,Any}()) 
+    CachedStack(stack; loaded=Dict{Symbol,Any}()) 
 
 A stack that wraps another Stack and stores any layers loaded 
 from it in a `Dict`. This prevents loading them multiple times
@@ -30,18 +28,17 @@ GeoData.childtype(s::CachedStack) = childtype(stack(s))
 
 # Base methods
 
-Base.parent(s::CachedStack) = stack(s)
-Base.keys(s::CachedStack) = keys(parent(s))
-Base.values(s::CachedStack) = values(parent(s))
-Base.names(s::CachedStack) = names(parent(s))
-Base.length(s::AbstractGeoStack) = length(parent(s))
+Base.keys(s::CachedStack) = keys(stack(s))
+Base.values(s::CachedStack) = values(stack(s))
+Base.names(s::CachedStack) = names(stack(s))
+Base.length(s::AbstractGeoStack) = length(stack(s))
 
-Base.getindex(stack::CachedStack, key::Symbol) = begin
-    l = cache(stack)
+Base.getindex(cstack::CachedStack, key::Symbol) = begin
+    l = cache(cstack)
     if haskey(l, key)
         l[key]
     else
-        s = parent(stack)[key] |> GeoArray
+        s = stack(cstack)[key] |> GeoArray
         l[key] = s
         s
     end

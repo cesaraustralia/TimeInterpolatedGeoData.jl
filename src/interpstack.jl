@@ -6,7 +6,7 @@ when indexed. The fractions to include from each arrays are
 captured in the `fractions` argument. You may use as many arrays
 as required.
 """
-struct InterpArray{T,N,D,A<:Tuple{<:AbstractGeoArray{T,N,D},Vararg{<:AbstractGeoArray{T,N,D}}},B,F,I,W} <: AbstractGeoArray{T,N,D,A}
+struct InterpArray{T,N,D,A<:AbstractArray{<:Union{Missing,AbstractGeoArray{T,N,D}}},B,F,I,W} <: AbstractGeoArray{T,N,D,A}
     arrays::A
     interpmode::B
     frac::F
@@ -16,7 +16,8 @@ end
 InterpArray(arrays, interpmode, frac) = begin
     valweights = Interpolations.value_weights(interpmode.degree, frac)
     weights = Interpolations.WeightedIndex(1:2, valweights)
-    InterpArray(arrays, interpmode, frac, interpolate(SVector(arrays), interpmode), weights)
+    arrays = [arrays...]
+    InterpArray(arrays, interpmode, frac, interpolate(arrays, interpmode), weights)
 end
 
 arrays(A::InterpArray) = A.arrays
@@ -44,7 +45,7 @@ Base.getindex(A::InterpArray, I::StandardIndices...) = begin
     int(frac(A))[I...]
 end
 Base.getindex(A::InterpArray, i1::Int, I::Int...) = 
-    SVector(map(a -> a[i1, I...], arrays(A)))[A.weights]
+    Vector(map(a -> a[i1, I...], arrays(A)))[A.weights]
 
 interparray(s, key::Symbol) = begin
     arrays = map(p -> p[key], stacks(s))
@@ -120,10 +121,10 @@ function interpseries(series::GeoSeries, newtimeseries, interpolators)
         x = searchsortedlast(index(ro_series, Ti), t)
         # For now we only allow length degree 2 interpolators,
         # using 2 stacks.
-        stacks = if x < firstindex(ro_series)
-            T[missing, ro_series[x]]
-        elseif x == lastindex(ro_series)
-            T[ro_series[end], missing]
+        stacks = if x <= firstindex(ro_series)
+            error("Include dates at least 1 period before the first in the required dates")
+        elseif x >= lastindex(ro_series)
+            error("Inlcude dates at least 1 period beyond the last in the required dates")
         else
             T[ro_series[x], ro_series[x+1]]
         end

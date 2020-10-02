@@ -8,8 +8,8 @@
 Lazily interpolates spatial data in the time dimension. 
 
 This can be useful when a model needs daily data but layers for a particular dataset are monthly.
-It can also be useful to interpolate maximum and minimum values (such as
-temperature) to hourly temperature values.
+It can also be useful to interpolate maximum and minimum values (such as temperature) 
+to hourly temperature values.
 
 This package provides tools for doing both of these things.
 

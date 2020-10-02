@@ -5,7 +5,7 @@ end
 
 interpmode(mm::MinMaxSpec) = mm.interpmode
 
-function windowfromtimes(spec::MinMaxSpec, step, tfrac) 
+function chooseinterparrays(spec::MinMaxSpec, step, tfrac) 
     # Get layers, indices and interpolation fraction fo this specific
     # fraction of the timestep
     minfrac, maxfrac = map(t -> Second(t) / Second(Day(1)), spec.times)
@@ -33,11 +33,13 @@ struct MinMaxFracs{I,F,IM}
     interpmode::IM
 end
 MinMaxFracs(spec, step, trfrac) = begin
-    inds, frac = windowfromtimes(spec, step, trfrac)
+    inds, frac = chooseinterparrays(spec, step, trfrac)
     imode = spec.interpmode
     MinMaxFracs{typeof(inds),typeof(frac),typeof(imode)}(inds, frac, imode)
 end
 
+frac(mm::MinMaxFracs) = mm.frac
+indices(mm::MinMaxFracs) = mm.indices
 interpmode(mm::MinMaxFracs) = mm.interpmode
 
 
@@ -49,7 +51,7 @@ has minimum and maximum values provided in separate layers of the
 stack. Other layers in the stack are interpolated, or not,
 as for `InterpStack`.
 """
-struct MinMaxInterpStack{S,I,MMS<:NamedTuple{<:Any,Tuple{Vararg{<:MinMaxFracs}}}} <: AbstractGeoStack{S}
+struct MinMaxInterpStack{S,I,MMS<:NamedTuple} <: AbstractGeoStack{S}
     stacks::S
     interpmodes::I
     frac::Float64
@@ -60,6 +62,7 @@ MinMaxInterpStack(stacks, interpmodes, tfrac, specs::NamedTuple{<:Any,<:Tuple{Va
     interpseries[i] = MinMaxInterpStack(stacks, interpmodes, frac, minmaxfracs)
 end
 
+stacks(s::MinMaxInterpStack) = s.stacks
 interpmodes(s::MinMaxInterpStack) = s.interpmodes
 frac(s::MinMaxInterpStack) = s.frac
 specs(s::MinMaxInterpStack) = s.specs
@@ -67,14 +70,18 @@ specs(s::MinMaxInterpStack) = s.specs
 Base.getindex(s::MinMaxInterpStack, key::Symbol) =
     if key in keys(s.specs)
         spec = s.specs[key]
+        frac_ = frac(spec)
         intmode = interpmode(spec)
         arrays = map((k, i) -> s.stacks[i][k], keys(spec.indices), spec.indices)
         imode = interpmode(spec)
-        valweights = Interpolations.value_weights(i.degree, frac)
-        weights = Interpolations.WeightedIndex(1:2, valweights)
-        InterpArray(arrays, imode, frac, interpolate(SVector(arrays), imode), weights)
+        if frac_ < 1
+            frac_ += 1
+        end
+        valweights = Interpolations.value_weights(imode.degree, frac_)
+        weights = Interpolations.WeightedIndex(axes(arrays, 1), valweights)
+        InterpArray(arrays, imode, frac_, interpolate(arrays, imode), weights)
     else
-        interparray(stack, key)
+        interparray(s, key)
     end
 
 # Base.getindex(s::MinMaxInterpStack, key::Symbol, i1::StandardIndices, I::StandardIndices...) =
@@ -86,88 +93,29 @@ Base.getindex(s::MinMaxInterpStack, key::Symbol) =
 #         interparray(stack, key, i1, I...)
 #     end
 
-function minmaxseries(series::GeoSeries, newtimeseries, interpolators, spec::NamedTuple)
+function minmaxseries(series::GeoSeries, dates, interpolators, specs::NamedTuple)
     # Convert series to mutable ReadOnceStack that will become GeoStacks 
     # the first time they are accessed. Interpolated sliced will share 
-    # ReadOnceStack so they are only loaded once.
-    origtimeseries = index(series, Ti)
-    ro_series = ReadOnceStack.(series)
-    T = Union{eltype(ro_series),Missing}
-    interpseries = Vector(undef, length(newtimeseries))
-    for (i, t) in enumerate(newtimeseries)
+    # CachedStack so they are only loaded once.
+    origdates = index(series, Ti)
+    cseries = CachedStack.(series)
+    interpseries = Vector(undef, length(dates))
+    for (i, t) in enumerate(dates)
         # Find the t in the serie Ti index 
-        x = searchsortedlast(index(ro_series, Ti), t)
-        # We need 3 stack, as we need the max temp
+        x = searchsortedlast(index(cseries, Ti), t)
+        # We need 3 stacks, as we need the max temp
         # from the previous day for times before tmin.
-        stacks = if x < firstindex(ro_series)
-            T[missing, missing, ro_series[x]]
-        elseif x == firstindex(ro_series)
-            T[missing, ro_series[x], ro_series[x+1]]
-        elseif x == lastindex(ro_series)
-            T[ro_series[end-1], ro_series[end], missing]
+        stacks = if x <= firstindex(cseries)
+            error("Inlcude dates at least 1 period before the first in the required dates")
+        elseif x == lastindex(cseries)
+            error("Inlcude dates at least 1 period beyond the last in the required dates")
         else
-            T[ro_series[x-1], ro_series[x], ro_series[x+1]]
+            [cseries[x-1], cseries[x], cseries[x+1]]
         end
         stacks = OffsetArray(stacks, 0:2)
-        frac = calcfrac(origtimeseries[x], origtimeseries[x], t)
-        minmaxfracs = map(MinMaxFracs(spec, step(newtimeseries), frac), specs)
+        frac = calcfrac(origdates[x], origdates[x] + step(origdates), t)
+        minmaxfracs = map(spec -> MinMaxFracs(spec, step(dates), frac), specs)
         interpseries[i] = MinMaxInterpStack(stacks, interpolators, frac, minmaxfracs)
     end
-    GeoSeries(interpseries, Ti(newtimeseries); childtype=InterpStack)
+    GeoSeries(interpseries, Ti(dates); childtype=InterpStack)
 end
-
-
-
-# Interpolation methods for cyclic min/max values like temperature
-
-"""
-    Cosine()
-
-Similar to a `Linear` interpolator, but using `sin` to calculate
-the weights, as if it is cyclic between two values.
-"""
-struct Cosine <: Interpolations.Degree{1} end
-
-Interpolations.positions(::Cosine, ax::AbstractUnitRange{<:Integer}, x) =
-    Interpolations.positions(Linear(), ax, x)
-
-Interpolations.value_weights(::Cosine, δx) = begin
-    # calculate the fraction from a sin
-    cosfrac = -cos(π * δx)
-    # normalise between 0 and 1
-    normed = (cosfrac + 1) / 2
-    (1-normed, normed)
-end
-Interpolations.gradient_weights(::Cosine, δx) = (-oneunit(δx), oneunit(δx))
-Interpolations.hessian_weights(::Cosine, δx) = (zero(δx), zero(δx))
-Interpolations.padded_axis(ax::AbstractUnitRange, ::BSpline{Cosine}) = ax
-
-"""
-    HypTan{S}()
-
-Similar to a `Linear` interpolator, but using hyperbolic tangent to 
-calculate the weights. It has a multiplier `X` that controls how long the
-curve is near each index. This is automatically scaled so the max and min 
-values are always 0 and 1 for all `X`. At the limits, HypTan is essentially 
-`Linear` and `NoInterp`. 
-
-`HypTan{0}` will error, instead uses `Linear` - which is identical.
-"""
-struct HypTan{X,S} <: Interpolations.Degree{1} end
-HypTan() = HypTan{2}()
-HypTan{X}() where X = HypTan{X,1 / tanh(π * X / 2)}()
-HypTan{0}() = Linear()
-
-Interpolations.positions(::HypTan, ax::AbstractUnitRange{<:Integer}, x) =
-    Interpolations.positions(Linear(), ax, x)
-
-Interpolations.value_weights(ht::HypTan{X,S}, δx) where {X,S} = begin
-    # calculate the fraction from a sin
-    hypfrac = tanh(X * π * (δx - 0.5)) * S
-    # normalise between 0 and 1
-    normed = (hypfrac + 1) / 2
-    (1-normed, normed)
-end
-Interpolations.gradient_weights(::HypTan, δx) = (-oneunit(δx), oneunit(δx))
-Interpolations.hessian_weights(::HypTan, δx) = (zero(δx), zero(δx))
-Interpolations.padded_axis(ax::AbstractUnitRange, ::BSpline{HypTan}) = ax
