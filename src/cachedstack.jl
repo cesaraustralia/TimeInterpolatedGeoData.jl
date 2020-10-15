@@ -21,7 +21,7 @@ cache(s::CachedStack) = s.cache
 
 # GeoData methods
 
-GeoData.refdims(s::CachedStack) = refims(stack(s))
+GeoData.refdims(s::CachedStack) = refdims(stack(s))
 GeoData.metadata(s::CachedStack) = metadata(stack(s))
 GeoData.window(s::CachedStack) = window(stack(s))
 GeoData.childtype(s::CachedStack) = childtype(stack(s))

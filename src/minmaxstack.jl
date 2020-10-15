@@ -67,6 +67,12 @@ interpmodes(s::MinMaxInterpStack) = s.interpmodes
 frac(s::MinMaxInterpStack) = s.frac
 specs(s::MinMaxInterpStack) = s.specs
 
+GeoData.refdims(s::MinMaxInterpStack) = refdims(first(stacks(s)))
+GeoData.metadata(s::MinMaxInterpStack) = metadata(first(stacks(s)))
+GeoData.window(s::MinMaxInterpStack) = window(first(stacks(s)))
+GeoData.childtype(s::MinMaxInterpStack) = childtype(first(stacks(s)))
+
+
 Base.getindex(s::MinMaxInterpStack, key::Symbol) =
     if key in keys(s.specs)
         spec = s.specs[key]
@@ -83,6 +89,9 @@ Base.getindex(s::MinMaxInterpStack, key::Symbol) =
     else
         interparray(s, key)
     end
+
+# TODO include non-minmax keys
+Base.keys(s::MinMaxInterpStack) = keys(specs(s)) 
 
 # Base.getindex(s::MinMaxInterpStack, key::Symbol, i1::StandardIndices, I::StandardIndices...) =
 #     if key in keys(s.minmaxinterpmodes)
@@ -106,11 +115,37 @@ function minmaxseries(series::GeoSeries, dates, interpolators, specs::NamedTuple
         # We need 3 stacks, as we need the max temp
         # from the previous day for times before tmin.
         stacks = if x <= firstindex(cseries)
-            error("Inlcude dates at least 1 period before the first in the required dates")
+            error("Include dates at least 1 period before the first in the required dates")
         elseif x == lastindex(cseries)
-            error("Inlcude dates at least 1 period beyond the last in the required dates")
+            error("Include dates at least 1 period beyond the last in the required dates")
         else
             [cseries[x-1], cseries[x], cseries[x+1]]
+        end
+        stacks = OffsetArray(stacks, 0:2)
+        frac = calcfrac(origdates[x], origdates[x] + step(origdates), t)
+        minmaxfracs = map(spec -> MinMaxFracs(spec, step(dates), frac), specs)
+        interpseries[i] = MinMaxInterpStack(stacks, interpolators, frac, minmaxfracs)
+    end
+    GeoSeries(interpseries, Ti(dates); childtype=InterpStack)
+end
+
+function meandayminmaxseries(series::GeoSeries, dates, interpolators, specs::NamedTuple)
+    # Convert series to mutable ReadOnceStack that will become GeoStacks 
+    # the first time they are accessed. Interpolated sliced will share 
+    # CachedStack so they are only loaded once.
+    origdates = index(series, Ti)
+    cseries = CachedStack.(series)
+    interpseries = Vector(undef, length(dates))
+    for (i, t) in enumerate(dates)
+        # Find the t in the series Ti index 
+        x = searchsortedlast(index(cseries, Ti), t)
+        # We need 3 stacks, as we need the max temp
+        # from the previous day for times before tmin.
+        stacks = if x < firstindex(cseries) || x > lastindex(cseries)
+            error("Date $x is outside the series")
+        else
+            # We just use the same average day three times
+            [cseries[x], cseries[x], cseries[x]]
         end
         stacks = OffsetArray(stacks, 0:2)
         frac = calcfrac(origdates[x], origdates[x] + step(origdates), t)

@@ -39,11 +39,15 @@ end
 
 # AWAP
 
+# AWAP asciii files don't have crs and BOM don't specify what it is besides
+# being evenly spaced lat/lon. So we assume it's EPSG(4326) and set it manually
+
 geoarray(T::Type{AWAP}, args...; kwargs...) = 
-    GDALarray(rasterpath(T, args...); kwargs...)
+    GDALarray(rasterpath(T, args...); crs=EPSG(4326), kwargs...)
 
 stack(T::Type{AWAP}; date, layers=rasterlayers(T), kwargs...) = 
-    GDALstack(map(l -> rasterpath(T, l, date), layers); keys=map(layerkey, layers), kwargs...)
+    GDALstack(map(l -> rasterpath(T, l, date), layers); childkwargs=(crs=EPSG(4326),), 
+              keys=map(layerkey, layers), kwargs...)
 
 series(T::Type{AWAP}; dates, layers=rasterlayers(T), window=(), kwargs...) = begin
     dates = first(dates):Day(1):last(dates)
