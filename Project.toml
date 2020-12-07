@@ -10,7 +10,7 @@ GeoData = "9b6fcbb8-86d6-11e9-1ce7-23a6bb139a78"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-SimpleSDMDataSources = "223ac6fb-8ff2-47bc-8662-ddfd67b53883"
+RasterDataSources = "3cb90ccd-e1b6-4867-9617-4276c8b2ca36"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
