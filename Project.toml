@@ -15,10 +15,10 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 ArchGDAL = "0.5"
-GeoData = "0.2"
+GeoData = "0.2, 0.3"
 Interpolations = "0.11, 0.12, 0.13"
 OffsetArrays = "0.10, 0.11, 1"
-StaticArrays = "0.10, 0.11, 0.12"
+StaticArrays = "0.10, 0.11, 0.12, 1"
 julia = "1"
 
 [extras]
