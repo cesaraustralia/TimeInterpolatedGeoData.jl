@@ -1,9 +1,9 @@
-using TimeInterpolatedGeoData, Test, Dates, Interpolations, GeoData, SimpleSDMDataSources
+using TimeInterpolatedGeoData, Test, Dates, Interpolations, GeoData, RasterDataSources
 
 include(joinpath(dirname(pathof(TimeInterpolatedGeoData)), "../test/test_utils.jl"))
 
 using TimeInterpolatedGeoData: chooseinterparrays, MinMaxFracs, calcfrac, Cosine
-using SimpleSDMDataSources: Temperature, MinAve, MaxAve
+using RasterDataSources: Temperature, MinAve, MaxAve
 
 spec = MinMaxSpec((tmin=Hour(5), tmax=Hour(14)), BSpline(Cosine()))
 

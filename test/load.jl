@@ -1,6 +1,6 @@
-using TimeInterpolatedGeoData, SimpleSDMDataSources, Test, Dates, GeoData
+using TimeInterpolatedGeoData, RasterDataSources, Test, Dates, GeoData
 
-using SimpleSDMDataSources: Values, SoilMoisture, Upper, Lower
+using RasterDataSources: Values, SoilMoisture, Upper, Lower
 
 @testset "load WorldClim Weather" begin
     # Weather

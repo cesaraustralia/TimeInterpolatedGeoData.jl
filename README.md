@@ -18,6 +18,6 @@ To install:
 
 ```julia
 ] 
-add https://github.com/cesaraustralia/SimpleSDMDataSources.jl
+add https://github.com/cesaraustralia/RasterDataSources.jl
 add https://github.com/cesaraustralia/TimeInterpolatedGeoData.jl
 ```

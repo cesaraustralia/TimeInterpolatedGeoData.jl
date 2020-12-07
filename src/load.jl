@@ -22,7 +22,7 @@ end
 # ALWB
 
 function geoarray(T::Type{<:ALWB}, layer::Type, date::TimeType; kwargs...)
-    key = Symbol(SimpleSDMDataSources._pathsegment(layer))
+    key = Symbol(RasterDataSources._pathsegment(layer))
     NCDarray(rasterpath(T, layer, date), key; kwargs...)
 end
 

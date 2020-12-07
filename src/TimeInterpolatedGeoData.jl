@@ -5,18 +5,14 @@ using GeoData,
       Dates, 
       StaticArrays, 
       OffsetArrays, 
-      SimpleSDMDataSources,
+      RasterDataSources,
       ArchGDAL, 
       NCDatasets
 
-using SimpleSDMDataSources: Solar, Rainfall, VapourPressure, Temperature, 
+using RasterDataSources: Solar, Rainfall, VapourPressure, Temperature, 
       H09, H15, MinAve, MaxAve, rasterlayers
 
 using GeoData: StandardIndices, readwindowed
-
-
-const SSL = SimpleSDMDataSources
-
 
 export CachedStack 
 
