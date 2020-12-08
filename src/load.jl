@@ -8,10 +8,10 @@
 geoarray(T::Type{<:WorldClim}, args...; kwargs...) = 
     GDALarray(rasterpath(T, args...); kwargs...)
 
-stack(T::Type{WorldClim{Weather}}; date, layers=rasterlayers(T), kwargs...) = 
+stack(T::Type{WorldClim{Weather}}; date, layers=layers(T), kwargs...) = 
     GDALstack(map(l -> rasterpath(T, l, date), layers); keys=layers, kwargs...)
 
-series(T::Type{WorldClim{Weather}}; dates, layers=rasterlayers(T), window=(), kwargs...) = begin
+series(T::Type{WorldClim{Weather}}; dates, layers=layers(T), window=(), kwargs...) = begin
     dates = first(dates):Month(1):last(dates)
     timedim = Ti(dates)
     stacks = [stack(T; date=d, layers=layers, window=window) for d in dates]
@@ -26,10 +26,10 @@ function geoarray(T::Type{<:ALWB}, layer::Type, date::TimeType; kwargs...)
     NCDarray(rasterpath(T, layer, date), key; kwargs...)
 end
 
-stack(T::Type{<:ALWB}; date, layers=rasterlayers(T), kwargs...) = 
+stack(T::Type{<:ALWB}; date, layers=layers(T), kwargs...) = 
     GeoStack(map(l -> geoarray(T, l, date), layers)...; kwargs...)
 
-series(T::Type{<:ALWB}; dates, layers=rasterlayers(T), window=(), kwargs...) = begin
+series(T::Type{<:ALWB}; dates, layers=layers(T), window=(), kwargs...) = begin
     dates = first(dates):Month(1):last(dates)
     timedim = Ti(dates)
     stacks = [stack(T; date=d, layers=layers, window=window) for d in dates]
@@ -45,11 +45,11 @@ end
 geoarray(T::Type{AWAP}, args...; kwargs...) = 
     GDALarray(rasterpath(T, args...); crs=EPSG(4326), kwargs...)
 
-stack(T::Type{AWAP}; date, layers=rasterlayers(T), kwargs...) = 
+stack(T::Type{AWAP}; date, layers=layers(T), kwargs...) = 
     GDALstack(map(l -> rasterpath(T, l, date), layers); childkwargs=(crs=EPSG(4326),), 
               keys=map(layerkey, layers), kwargs...)
 
-series(T::Type{AWAP}; dates, layers=rasterlayers(T), window=(), kwargs...) = begin
+series(T::Type{AWAP}; dates, layers=layers(T), window=(), kwargs...) = begin
     dates = first(dates):Day(1):last(dates)
     timedim = Ti(dates)
     stacks = [stack(T; date=d, layers=layers, window=window) for d in dates]

@@ -42,7 +42,6 @@ frac(mm::MinMaxFracs) = mm.frac
 indices(mm::MinMaxFracs) = mm.indices
 interpmode(mm::MinMaxFracs) = mm.interpmode
 
-
 """
     MimMaxInterpStack
 

@@ -10,7 +10,7 @@ using GeoData,
       NCDatasets
 
 using RasterDataSources: Solar, Rainfall, VapourPressure, Temperature, 
-      H09, H15, MinAve, MaxAve, rasterlayers
+      H09, H15, MinAve, MaxAve, layers
 
 using GeoData: StandardIndices, readwindowed
 
