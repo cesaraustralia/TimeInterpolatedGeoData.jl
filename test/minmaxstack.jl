@@ -67,50 +67,74 @@ tempspec = MinMaxSpec((tmin=Hour(5), tmax=Hour(14)), BSpline(Linear()))
 end
 
 
-specs = (temp=tempspec,)
-min0 = [1.0 2.0; 3.0 4.0]
-dimz = (X, Y)
-dates = DateTime(2001):Day(1):DateTime(2001, 12)
-# tmin increases by 0.1 each day, tmax is j0.0 degreas above tmin for all dates
-stacks = [GeoStack((tmin=GeoArray(min0 .+ 0.1i, dimz), tmax=GeoArray(min0  .+ 10 .+ 0.1i, dimz))) for i in eachindex(dates)]
-ser = GeoSeries(stacks, Ti(dates))
-mmser = minmaxseries(ser, DateTime(2001, 2):Hour(1):DateTime(2001, 4), (), specs)
+@testset "MinMax" begin
+    specs = (temp=tempspec,)
+    min0 = [1.0 2.0; 3.0 4.0]
+    dimz = (X, Y)
+    dates = DateTime(2001):Day(1):DateTime(2001, 12)
+    # tmin increases by 0.1 each day, tmax is j0.0 degreas above tmin for all dates
+    stacks = [GeoStack((tmin=GeoArray(min0 .+ 0.1i, dimz), tmax=GeoArray(min0  .+ 10 .+ 0.1i, dimz))) for i in eachindex(dates)]
+    ser = GeoSeries(stacks, Ti(dates))
+    mmser = minmaxseries(ser, DateTime(2001, 2):Hour(1):DateTime(2001, 4), (), specs)
 
-mmstack = mmser[DateTime(2001, 2, 1)]
-@test mmstack.frac == 0.0
-mmstack = mmser[DateTime(2001, 2, 1, 5)]
-@test mmstack.frac == 5/24
-@test mmstack.specs[:temp].frac == 0.0
-@test mmstack.specs[:temp].indices == (tmin=1, tmax=1)
-@test mmstack[:temp] == ser[DateTime(2001, 2, 1)][:tmin]
+    mmstack = mmser[DateTime(2001, 2, 1)]
+    @test mmstack.frac == 0.0
+    mmstack = mmser[DateTime(2001, 2, 1, 5)]
+    @test mmstack.frac == 5/24
+    @test mmstack.specs[:temp].frac == 0.0
+    @test mmstack.specs[:temp].indices == (tmin=1, tmax=1)
+    @test mmstack[:temp] == ser[DateTime(2001, 2, 1)][:tmin]
 
-# Minimum at 5am
-@test mmser[DateTime(2001, 2, 1, 5)][:temp] == ser[DateTime(2001, 2, 1)][:tmin]
-# Maximum at 2pm
-@test mmser[DateTime(2001, 2, 1, 14)][:temp] == ser[DateTime(2001, 2, 1)][:tmax]
-# 1/3 of the way between max and min the next day
-@test mmser[DateTime(2001, 2, 1, 19)][:temp] ≈ ser[DateTime(2001, 2, 1)][:tmax] .* (2/3) + ser[DateTime(2001, 2, 2)][:tmin] .* (1/3)
-
+    # Minimum at 5am
+    @test mmser[DateTime(2001, 2, 1, 5)][:temp] == ser[DateTime(2001, 2, 1)][:tmin]
+    # Maximum at 2pm
+    @test mmser[DateTime(2001, 2, 1, 14)][:temp] == ser[DateTime(2001, 2, 1)][:tmax]
+    # 1/3 of the way between max and min the next day
+    @test mmser[DateTime(2001, 2, 1, 19)][:temp] ≈ ser[DateTime(2001, 2, 1)][:tmax] .* (2/3) + ser[DateTime(2001, 2, 2)][:tmin] .* (1/3)
+end
 
 
 if Sys.islinux()
-    # AWAP MinMax
-    layers = (Temperature{MinAve}, Temperature{MaxAve})
-    dates = (DateTime(2018, 12, 31), DateTime(2020, 1, 1))
-    download_raster(AWAP, layers; dates=dates)
+    @testset "AWAP MinMax" begin
+        layers = (Temperature{MinAve}, Temperature{MaxAve})
+        dates = (DateTime(2018, 12, 31), DateTime(2020, 1, 1))
+        download_raster(AWAP, layers; dates=dates)
 
-    # Weather time-series
-    ser = series(AWAP; layers=layers, dates=dates, window=(Band(1),))
+        # Weather time-series
+        ser = series(AWAP; layers=layers, dates=dates, window=(Band(1),))
 
-    index(ser, Ti)
-    ser[DateTime(2019, 1)][:tmin]
-    ser[DateTime(2019, 1)][:tmax]
+        index(ser, Ti)
+        ser[DateTime(2019, 1)][:tmin]
+        ser[DateTime(2019, 1)][:tmax]
 
-    mmseries = minmaxseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (), specs)
-    iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
-    awapstack = stack(AWAP; date=DateTime(2019, 1, 5)) 
-    mmseries[DateTime(2019, 1, 5, 6)][:temp]
-    mmseries[DateTime(2019, 1, 5, 1)][:temp]
-    mmseries[DateTime(2019, 1, 5, 2)][:temp]
-    mmseries[DateTime(2019, 1, 5, 3)][:temp]
+        mmseries = minmaxseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (), specs)
+        iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
+        awapstack = stack(AWAP; date=DateTime(2019, 1, 5)) 
+        mmseries[DateTime(2019, 1, 5, 6)][:temp]
+        mmseries[DateTime(2019, 1, 5, 1)][:temp]
+        mmseries[DateTime(2019, 1, 5, 2)][:temp]
+        mmseries[DateTime(2019, 1, 5, 3)][:temp]
+    end
+end
+
+@testset "WorldClim Climate meandayminmaxseries" begin
+    layers = (:tmin, :tmax)
+    months = 1:12
+    download_raster(WorldClim{Climate}, layers; month=months)
+
+    ser = series(WorldClim{Climate}; layers=layers)
+    ser = set(ser, Ti=(DateTime(2001, 1, 1):Month(1):DateTime(2001, 12, 1)))
+    # We use a DimensionalData dim instead of a vector of dates because a 
+    # Dim can have a step size with irregular spaced data - here 1 Hour.
+    dates = Ti(vec([d + h for h in Hour.(0:23), d in index(ser, Ti)]); 
+        mode=Sampled(Ordered(), Regular(Hour(1)), Intervals())
+    )
+    tempspec = MinMaxSpec((tmin=Hour(5), tmax=Hour(14)), BSpline(Linear()))
+    specs = (temp=tempspec,)
+
+    mmseries = meandayminmaxseries(ser, dates, (), specs)
+    mmseries[DateTime(2001, 1, 1, 6)][:temp]
+    mmseries[DateTime(2001, 4, 1, 1)][:temp]
+    mmseries[DateTime(2001, 9, 1, 13)][:temp]
+    mmseries[DateTime(2001, 11, 1, 2)][:temp]
 end
