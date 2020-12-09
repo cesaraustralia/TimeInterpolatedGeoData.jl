@@ -13,7 +13,6 @@ using RasterDataSources: Values, SoilMoisture, Upper, Lower
     ser[Date(2001, 1)][:tmax]
     # Select Australia, using regular lat/lon selectors
     A = geoarray(WorldClim{Weather}, :prec, Date(2001, 05); mappedcrs=EPSG(4326))
-    A[Lat(Between(-10, -45)), Lon(Between(110, 160))]
 end
 
 @testset "load WorldClim Climate" begin
