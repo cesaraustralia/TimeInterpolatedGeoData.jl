@@ -89,10 +89,9 @@ GeoData.childtype(s::InterpStack) = childtype(centerval(s))
 # Base methods
 
 Base.keys(s::InterpStack) = keys(centerval(s))
-Base.keys(s::CachedStack) = keys(centerval(s))
-Base.values(s::CachedStack) = values(centerval(s))
-Base.names(s::CachedStack) = names(centerval(s))
-Base.length(s::AbstractGeoStack) = length(centerval(s))
+Base.values(s::InterpStack) = values(centerval(s))
+Base.names(s::InterpStack) = names(centerval(s))
+Base.length(s::InterpStack) = length(centerval(s))
 
 Base.getindex(s::InterpStack, key::Symbol) = interparray(s, key)
 Base.getindex(s::InterpStack, key::Symbol, i1::StandardIndices, I::StandardIndices...) =
