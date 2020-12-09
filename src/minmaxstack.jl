@@ -68,8 +68,8 @@ specs(s::MinMaxInterpStack) = s.specs
 
 GeoData.refdims(s::MinMaxInterpStack) = refdims(first(stacks(s)))
 GeoData.metadata(s::MinMaxInterpStack) = metadata(first(stacks(s)))
-GeoData.window(s::MinMaxInterpStack) = window(first(stacks(s)))
-GeoData.childtype(s::MinMaxInterpStack) = childtype(first(stacks(s)))
+GeoData.window(s::MinMaxInterpStack) = GeoData.window(first(stacks(s)))
+GeoData.childtype(s::MinMaxInterpStack) = GeoData.childtype(first(stacks(s)))
 
 
 Base.getindex(s::MinMaxInterpStack, key::Symbol) =
@@ -129,7 +129,7 @@ function minmaxseries(series::GeoSeries, dates, interpolators, specs::NamedTuple
 end
 
 function meandayminmaxseries(series::GeoSeries, dates, interpolators, specs::NamedTuple)
-    # Convert series to mutable ReadOnceStack that will become GeoStacks 
+    # Convert series to mutable CachedStack that will become GeoStacks 
     # the first time they are accessed. Interpolated sliced will share 
     # CachedStack so they are only loaded once.
     origdates = index(series, Ti)
@@ -151,5 +151,10 @@ function meandayminmaxseries(series::GeoSeries, dates, interpolators, specs::Nam
         minmaxfracs = map(spec -> MinMaxFracs(spec, step(dates), frac), specs)
         interpseries[i] = MinMaxInterpStack(stacks, interpolators, frac, minmaxfracs)
     end
-    GeoSeries(interpseries, Ti(dates); childtype=InterpStack)
+    dim = if dates isa Dimension
+        dates
+    else
+        Ti(dates)
+    end
+    GeoSeries(interpseries, dim; childtype=InterpStack)
 end
