@@ -2,18 +2,19 @@ using TimeInterpolatedGeoData, RasterDataSources, Test, Dates, GeoData
 
 using RasterDataSources: Values, SoilMoisture, Upper, Lower
 
-@testset "load WorldClim Weather" begin
+# Too big to test
+# @testset "load WorldClim Weather" begin
     # Weather
-    rasterpath(WorldClim{Weather}, :prec, Date(2001, 1))
-    download_raster(WorldClim{Weather}, :prec,; dates=Date(2001):Month(1):Date(2001, 12))
+    # rasterpath(WorldClim{Weather}, :prec, Date(2001, 1))
+    # download_raster(WorldClim{Weather}, :prec,; dates=Date(2001):Month(1):Date(2001, 12))
 
     # Weather time-series
-    dates = (Date(2001), Date(2002))
-    ser = series(WorldClim{Weather}; dates=dates, window=(Lat(600:1900), Lon(600:1900)))
-    ser[Date(2001, 1)][:tmax]
+    # dates = (Date(2001), Date(2002))
+    # ser = series(WorldClim{Weather}; dates=dates, window=(Lat(600:1900), Lon(600:1900)))
+    # ser[Date(2001, 1)][:tmax]
     # Select Australia, using regular lat/lon selectors
-    A = geoarray(WorldClim{Weather}, :prec, Date(2001, 05); mappedcrs=EPSG(4326))
-end
+    # A = geoarray(WorldClim{Weather}, :prec, Date(2001, 05); mappedcrs=EPSG(4326))
+# end
 
 @testset "load WorldClim Climate" begin
     # Weather
