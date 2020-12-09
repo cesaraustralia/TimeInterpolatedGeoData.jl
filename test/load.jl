@@ -37,10 +37,12 @@ end
     A = geoarray(ALWB{Values,Day}, SoilMoisture{Lower}, DateTime(2019, 10, 19))
 end
 
-@testset "load AWAP" begin
-    dates = DateTime(2019, 09, 19), DateTime(2019, 11, 19)
-    download_raster(AWAP; dates=dates)
-    A = geoarray(AWAP, Rainfall, DateTime(2019, 10, 19))
-    A = geoarray(AWAP, Temperature{MaxAve}, DateTime(2019, 10, 19))
-    series(AWAP; dates=dates)[DateTime(2019, 10, 1)][:solar]
+if Sys.islinux()
+    @testset "load AWAP" begin
+        dates = DateTime(2019, 09, 19), DateTime(2019, 11, 19)
+        download_raster(AWAP; dates=dates)
+        A = geoarray(AWAP, Rainfall, DateTime(2019, 10, 19))
+        A = geoarray(AWAP, Temperature{MaxAve}, DateTime(2019, 10, 19))
+        series(AWAP; dates=dates)[DateTime(2019, 10, 1)][:solar]
+    end
 end

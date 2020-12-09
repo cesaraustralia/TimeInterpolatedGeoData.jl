@@ -93,22 +93,24 @@ mmstack = mmser[DateTime(2001, 2, 1, 5)]
 
 
 
-# MinMax
-layers = (Temperature{MinAve}, Temperature{MaxAve})
-dates = (DateTime(2018, 12, 31), DateTime(2020, 1, 1))
-download_raster(AWAP, layers; dates=dates)
+if Sys.islinux()
+    # AWAP MinMax
+    layers = (Temperature{MinAve}, Temperature{MaxAve})
+    dates = (DateTime(2018, 12, 31), DateTime(2020, 1, 1))
+    download_raster(AWAP, layers; dates=dates)
 
-# Weather time-series
-ser = series(AWAP; layers=layers, dates=dates, window=(Band(1),))
+    # Weather time-series
+    ser = series(AWAP; layers=layers, dates=dates, window=(Band(1),))
 
-index(ser, Ti)
-ser[DateTime(2019, 1)][:tmin]
-ser[DateTime(2019, 1)][:tmax]
+    index(ser, Ti)
+    ser[DateTime(2019, 1)][:tmin]
+    ser[DateTime(2019, 1)][:tmax]
 
-mmseries = minmaxseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (), specs)
-iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
-awapstack = stack(AWAP; date=DateTime(2019, 1, 5)) 
-mmseries[DateTime(2019, 1, 5, 6)][:temp]
-mmseries[DateTime(2019, 1, 5, 1)][:temp]
-mmseries[DateTime(2019, 1, 5, 2)][:temp]
-mmseries[DateTime(2019, 1, 5, 3)][:temp]
+    mmseries = minmaxseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (), specs)
+    iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
+    awapstack = stack(AWAP; date=DateTime(2019, 1, 5)) 
+    mmseries[DateTime(2019, 1, 5, 6)][:temp]
+    mmseries[DateTime(2019, 1, 5, 1)][:temp]
+    mmseries[DateTime(2019, 1, 5, 2)][:temp]
+    mmseries[DateTime(2019, 1, 5, 3)][:temp]
+end
