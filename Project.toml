@@ -18,6 +18,7 @@ ArchGDAL = "0.5"
 GeoData = "0.3"
 Interpolations = "0.11, 0.12, 0.13"
 OffsetArrays = "0.10, 0.11, 1"
+RasterDataSources = "0.1"
 StaticArrays = "0.10, 0.11, 0.12, 1"
 julia = "1"
 
