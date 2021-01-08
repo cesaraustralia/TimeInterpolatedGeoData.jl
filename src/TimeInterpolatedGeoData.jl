@@ -9,9 +9,6 @@ using GeoData,
       ArchGDAL, 
       NCDatasets
 
-using RasterDataSources: Solar, Rainfall, VapourPressure, Temperature, 
-      H09, H15, MinAve, MaxAve, layers
-
 using GeoData: StandardIndices, readwindowed
 
 export CachedStack 
@@ -22,12 +19,11 @@ export MinMaxInterpStack, MinMaxSpec
 
 export Cosine, HypTan
 
-export geoarray, stack, series, interpseries, minmaxseries 
+export interpseries, minmaxseries, meandayminmaxseries
 
 include("cachedstack.jl")
 include("interpstack.jl")
 include("minmaxstack.jl")
 include("interpolations.jl")
-include("load.jl")
 
 end # module

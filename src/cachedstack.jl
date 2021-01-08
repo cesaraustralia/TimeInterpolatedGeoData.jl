@@ -23,15 +23,15 @@ cache(s::CachedStack) = s.cache
 
 GeoData.refdims(s::CachedStack) = refdims(stack(s))
 GeoData.metadata(s::CachedStack) = metadata(stack(s))
-GeoData.window(s::CachedStack) = window(stack(s))
-GeoData.childtype(s::CachedStack) = childtype(stack(s))
+GeoData.window(s::CachedStack) = GeoData.window(stack(s))
+GeoData.childtype(s::CachedStack) = GeoData.childtype(stack(s))
 
 # Base methods
 
 Base.keys(s::CachedStack) = keys(stack(s))
 Base.values(s::CachedStack) = values(stack(s))
 Base.names(s::CachedStack) = names(stack(s))
-Base.length(s::AbstractGeoStack) = length(stack(s))
+Base.length(s::CachedStack) = length(stack(s))
 
 Base.getindex(cstack::CachedStack, key::Symbol) = begin
     l = cache(cstack)
