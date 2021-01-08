@@ -19,7 +19,7 @@ export MinMaxInterpStack, MinMaxSpec
 
 export Cosine, HypTan
 
-export geoarray, stack, series, interpseries, minmaxseries, meandayminmaxseries
+export interpseries, minmaxseries, meandayminmaxseries
 
 include("cachedstack.jl")
 include("interpstack.jl")

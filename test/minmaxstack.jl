@@ -106,8 +106,11 @@ if Sys.islinux()
         ser[DateTime(2019, 1)][:tmin]
         ser[DateTime(2019, 1)][:tmax]
 
+        tempspec = MinMaxSpec((tmin=Hour(5), tmax=Hour(14)), BSpline(Linear()))
+        specs = (temp=tempspec,)
         mmseries = minmaxseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (), specs)
-        iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
+        iseries = interpseries(ser, DateTime(2019, 1):Hour(1):DateTime(2019, 12, 31), 
+                               (tmax=BSpline(Linear()), tmin=BSpline(Linear()),))
         awapstack = stack(AWAP; date=DateTime(2019, 1, 5)) 
         mmseries[DateTime(2019, 1, 5, 6)][:temp]
         mmseries[DateTime(2019, 1, 5, 1)][:temp]
@@ -119,9 +122,9 @@ end
 @testset "WorldClim Climate meandayminmaxseries" begin
     layers = (:tmin, :tmax)
     months = 1:12
-    download_raster(WorldClim{Climate}, layers; month=months)
+    getraster(WorldClim{Climate}, layers; month=months)
 
-    ser = series(WorldClim{Climate}; layers=layers)
+    ser = series(WorldClim{Climate}, layers)
     ser = set(ser, Ti=(DateTime(2001, 1, 1):Month(1):DateTime(2001, 12, 1)))
     # We use a DimensionalData dim instead of a vector of dates because a 
     # Dim can have a step size with irregular spaced data - here 1 Hour.

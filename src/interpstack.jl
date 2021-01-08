@@ -81,10 +81,10 @@ centerval(s::InterpStack) = centerval(stacks(s))
 
 # GeoData methods
 
-GeoData.refdims(s::InterpStack) = refims(centerval(s))
-GeoData.metadata(s::InterpStack) = metadata(centerval(s))
-GeoData.window(s::InterpStack) = window(centerval(s))
-GeoData.childtype(s::InterpStack) = childtype(centerval(s))
+GeoData.refdims(s::InterpStack) = GeoData.refims(centerval(s))
+GeoData.metadata(s::InterpStack) = GeoData.metadata(centerval(s))
+GeoData.window(s::InterpStack) = GeoData.window(centerval(s))
+GeoData.childtype(s::InterpStack) = GeoData.childtype(centerval(s))
 
 # Base methods
 
