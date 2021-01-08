@@ -1,7 +1,7 @@
 # TimeInterpolatedGeoData
 
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cesaraustralia.github.io/TimeInterpolatedGeoData.jl/dev/)
-[![Build Status](https://travis-ci.com/cesaraustralia/TimeInterpolatedGeoData.jl.svg?branch=master)](https://travis-ci.com/cesaraustralia/TimeInterpolatedGeoData.jl)
+![CI](https://github.com/cesaraustralia/TimeInterpolatedGeoData.jl/workflows/CI/badge.svg)
 [![codecov.io](http://codecov.io/github/cesaraustralia/TimeInterpolatedGeoData.jl/coverage.svg?branch=master)](http://codecov.io/github/cesaraustralia/TimeInterpolatedGeoData.jl?branch=master)
 
 
