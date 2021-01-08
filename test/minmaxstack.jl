@@ -3,7 +3,6 @@ using TimeInterpolatedGeoData, Test, Dates, Interpolations, GeoData, RasterDataS
 include(joinpath(dirname(pathof(TimeInterpolatedGeoData)), "../test/test_utils.jl"))
 
 using TimeInterpolatedGeoData: chooseinterparrays, MinMaxFracs, calcfrac, Cosine
-using RasterDataSources: Temperature, MinAve, MaxAve
 
 spec = MinMaxSpec((tmin=Hour(5), tmax=Hour(14)), BSpline(Cosine()))
 
@@ -96,12 +95,12 @@ end
 
 if Sys.islinux()
     @testset "AWAP MinMax" begin
-        layers = (Temperature{MinAve}, Temperature{MaxAve})
+        layers = (:tmin, :tmax)
         dates = (DateTime(2018, 12, 31), DateTime(2020, 1, 1))
-        download_raster(AWAP, layers; dates=dates)
+        getraster(AWAP, layers; date=dates)
 
         # Weather time-series
-        ser = series(AWAP; layers=layers, dates=dates, window=(Band(1),))
+        ser = series(AWAP, layers; date=dates, window=(Band(1),))
 
         index(ser, Ti)
         ser[DateTime(2019, 1)][:tmin]
