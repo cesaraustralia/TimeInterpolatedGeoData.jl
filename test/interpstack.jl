@@ -1,4 +1,4 @@
-using TimeInterpolatedGeoData, GeoData, NCDatasets, ArchGDAL, Interpolations, Dates, Test
+using TimeInterpolatedGeoData, GeoData, Interpolations, Dates, Test
 
 using TimeInterpolatedGeoData: calcfrac
 
@@ -52,17 +52,16 @@ include(joinpath(dirname(pathof(TimeInterpolatedGeoData)), "../test/test_utils.j
     # clear!(iseries[10])
 
     gdalpath = geturl("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
-    gdalstack = GDALstack((a=gdalpath, b=gdalpath))
-    geostack = GeoStack((a=0x02 .* GeoArray(GDALarray(gdalpath)), b=0x02 .* GeoArray(GDALarray(gdalpath))))
-    cstack1 = CachedStack(gdalstack)
-    cstack2 = CachedStack(geostack)
-    istack = InterpStack((cstack1, cstack2), (a=BSpline(Linear()), b=BSpline(Cosine())), 1.25)
+    stack1 = GeoStack((a=gdalpath, b=gdalpath))
+    stack2 = GeoStack((a=0x02 .* GeoArray(gdalpath), b=0x02 .* GeoArray(gdalpath)))
+    istack = interpstack((stack1, stack2), (a=BSpline(Linear()), b=BSpline(Cosine())), 0.25)
     A = istack[:a]
     B = istack[:b]
     A = istack[:a, 1:10, 1:10, 1]
     B = istack[:b, 1:10, 1:10, 1]
-    b = GeoArray(istack[:a]) 
-    # B = istack[:b] |> plot
+    b = read(istack[:a]) 
+    # using Plots
+    # istack[:b] |> plot
 
     # test the values somehow here
 end

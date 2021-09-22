@@ -21,10 +21,18 @@ cache(s::CachedStack) = s.cache
 
 # GeoData methods
 
-GeoData.refdims(s::CachedStack) = refdims(stack(s))
-GeoData.metadata(s::CachedStack) = metadata(stack(s))
-GeoData.window(s::CachedStack) = GeoData.window(stack(s))
-GeoData.childtype(s::CachedStack) = GeoData.childtype(stack(s))
+DD.dims(s::CachedStack) = DD.dims(stack(s))
+DD.refdims(s::CachedStack) = DD.refdims(stack(s))
+DD.metadata(s::CachedStack) = DD.metadata(stack(s))
+DD.layerdims(s::CachedStack) = DD.layerdims(stack(s))
+DD.layermetadata(s::CachedStack) = DD.layermetadata(stack(s))
+GD.layermissingval(s::CachedStack) = GD.layermissingval(stack(s))
+
+DD.layers(s::CachedStack) = map(k -> s[k], keys(s))
+function DD.rebuild(s::CachedStack, args...; kw...)
+    inner = rebuild(stack(s), args...; kw...)
+    CachedStack(inner, cache(s))
+end
 
 # Base methods
 
@@ -33,23 +41,24 @@ Base.values(s::CachedStack) = values(stack(s))
 Base.names(s::CachedStack) = names(stack(s))
 Base.length(s::CachedStack) = length(stack(s))
 
-Base.getindex(cstack::CachedStack, key::Symbol) = begin
-    l = cache(cstack)
-    if haskey(l, key)
-        l[key]
+function Base.getindex(cstack::CachedStack, key::Symbol)
+    c = cache(cstack)
+    if haskey(c, key)
+        return c[key]
     else
-        s = stack(cstack)[key] |> GeoArray
-        l[key] = s
-        s
+        s = read(stack(cstack)[key])
+        c[key] = s
+        return s
     end
 end
 
 # Clear
 
-clear!(stack::MemGeoStack) = clear!(data(stack))
-clear!(stack::DiskGeoStack) = nothing
+clear!(stack::AbstractGeoStack) = nothing
+clear!(stack::AbstractGeoStack) = clear(data(stack))
 clear!(stack::NamedTuple) = nothing
-clear!(stack::CachedStack) = 
+function clear!(stack::CachedStack) 
     for k in keys(cache(stack))
         delete!(cache(cache), k)
     end
+end

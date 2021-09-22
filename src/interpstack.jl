@@ -1,105 +1,76 @@
 """
     InterpArray(arrays::Tuple, fraction::Tuple)
 
-InterplatedArray holds multiple arrays the will be interpolated
-when indexed. The fractions to include from each arrays are
-captured in the `fractions` argument. You may use as many arrays
-as required.
+InterplatedArray holds multiple arrays the will be interpolated when indexed.
+The fractions to include from each arrays are captured in the `fractions` argument.
+You may use as many arrays as required.
 """
-struct InterpArray{T,N,D,A<:AbstractArray{<:Union{Missing,AbstractGeoArray{T,N,D}}},B,F,I,W} <: AbstractGeoArray{T,N,D,A}
+struct InterpArray{T,N,A<:AbstractVector{<:AbstractArray{<:Any,N}},B,F,W} <: DA.AbstractDiskArray{T,N}
     arrays::A
-    interpmode::B
+    interptype::B
     frac::F
-    interpolator::I
     weights::W
 end
-InterpArray(arrays, interpmode, frac) = begin
-    valweights = Interpolations.value_weights(interpmode.degree, frac)
-    weights = Interpolations.WeightedIndex(1:2, valweights)
+InterpArray(arrays::Tuple, interptype, frac) = InterpArray([arrays...], interptype, frac)
+function InterpArray(arrays::AbstractVector, interptype, frac)
+    A1 = first(arrays)
+    valweights = Interpolations.value_weights(interptype.degree, frac)
+    weights = Interpolations.WeightedIndex(axes(arrays, 1), valweights)
     arrays = [arrays...]
-    InterpArray(arrays, interpmode, frac, interpolate(arrays, interpmode), weights)
+    A1 = first(arrays)
+    # Promote to Float64 as we will interpolate the value
+    T = eltype(A1) isa AbstractFloat ? eltype(A1) : Float64
+    N = ndims(A1)
+    InterpArray{T,N,typeof.((arrays, interptype, frac, weights))...}(
+        arrays, interptype, frac, weights
+    )
 end
 
 arrays(A::InterpArray) = A.arrays
-interpmode(A::InterpArray) = A.interpmode
+interptype(A::InterpArray) = A.interptype
 frac(A::InterpArray) = A.frac
-interpolator(A::InterpArray) = A.interpolator
 weights(A::InterpArray) = A.weights
 
-GeoData.data(A::InterpArray) = interpolator(A)[frac(A)]
-GeoData.dims(A::InterpArray) = dims(first(arrays(A)))
-GeoData.refdims(A::InterpArray) = refdims(first(arrays(A))) 
-GeoData.name(A::InterpArray) = GeoData.name(first(arrays(A)))
-GeoData.missingval(A::InterpArray) = missingval(first(arrays(A)))
-GeoData.metadata(A::InterpArray) = metadata(first(arrays(A)))
+DA.haschunks(A::InterpArray) = DA.haschunks(first(arrays(A)))
+DA.eachchunk(A::InterpArray) = DA.eachchunk(first(arrays(A)))
+DA.readblock!(A::InterpArray, aout, r::AbstractUnitRange...) = aut .= A[r...]
 
 # Base methods
 
 # Copy with a broadcast so interpolation will work on a GPU?
 Base.copy!(dst::AbstractArray, src::InterpArray) = dst .= src
 
-Base.size(s::InterpArray, args...) = size(first(arrays(s)), args...)
-Base.getindex(A::InterpArray, I::StandardIndices...) = begin
-    As = [map(a -> view(a, I...), arrays(A))...]
-    int = interpolate(As, interpmode(A))
-    int(frac(A))[I...]
+Base.size(A::InterpArray) = Base.size(first(A.arrays))
+Base.size(A::InterpArray, dims::Int) = Base.size(first(A.arrays), dims)
+function Base.getindex(A::InterpArray, i1::StandardIndices, I::StandardIndices...)
+    data = [map(a -> a[i1, I...], arrays(A))...]
+    int = interpolate(data, interptype(A))
+    return collect(int(frac(A)))
 end
-Base.getindex(A::InterpArray, i1::Int, I::Int...) = 
+function Base.getindex(A::InterpArray, i1::Int, I::Int...)
     Vector(map(a -> a[i1, I...], arrays(A)))[A.weights]
-
-interparray(s, key::Symbol) = begin
-    arrays = map(p -> p[key], stacks(s))
-    intmodes = interpmodes(s)
-    if haskey(intmodes, key)
-        InterpArray(arrays, intmodes[key], s.frac)
-    else
-        centerval(arrays)
-    end
 end
-interparray(s, key::Symbol, i1::StandardIndices, I::StandardIndices...) = begin
-    arrays = map(p -> p[key], stacks(s)) 
-    intmodes = interpmodes(s) 
-    if haskey(intmodes, key)
-        arrays = map(a -> readwindowed(a, i1, I...), arrays)
-        InterpArray(arrays, intmodes[key], s.frac)
+
+function interparray(stacks, interptypes, frac, key::Symbol)
+    layers = map(p -> p[key], stacks)
+    A1 = first(layers)
+    if haskey(interptypes, key)
+        A = InterpArray(map(parent, layers), interptypes[key], frac)
+        return GeoArray(A, dims(A1); name=key, missingval=missingval(A1))
     else
-        readwindowed(centerval(arrays), i1, I...)
+        return centerval(layers)
     end
 end
 
-struct InterpStack{P,I<:NamedTuple} <: AbstractGeoStack{P}
-    stacks::P
-    interpmodes::I
-    frac::Float64
+function interpstack(stacks, interptypes, frac)
+    stackkeys = keys(first(stacks))
+    data = map(stackkeys) do key
+        parent(interparray(stacks, interptypes, frac + 1, key))
+    end |> NamedTuple{stackkeys}
+    return GeoStack(first(stacks); data=data)
 end
-stacks(s::InterpStack) = s.stacks
-interpmodes(s::InterpStack) = s.interpmodes
-frac(s::InterpStack) = s.frac
 
-centerval(vals) = vals[(length(vals) + 1) ÷ 2 + 1]
-centerval(s::InterpStack) = centerval(stacks(s))
-
-# GeoData methods
-
-GeoData.refdims(s::InterpStack) = GeoData.refims(centerval(s))
-GeoData.metadata(s::InterpStack) = GeoData.metadata(centerval(s))
-GeoData.window(s::InterpStack) = GeoData.window(centerval(s))
-GeoData.childtype(s::InterpStack) = GeoData.childtype(centerval(s))
-
-# Base methods
-
-Base.keys(s::InterpStack) = keys(centerval(s))
-Base.values(s::InterpStack) = values(centerval(s))
-Base.names(s::InterpStack) = names(centerval(s))
-Base.length(s::InterpStack) = length(centerval(s))
-
-Base.getindex(s::InterpStack, key::Symbol) = interparray(s, key)
-Base.getindex(s::InterpStack, key::Symbol, i1::StandardIndices, I::StandardIndices...) =
-    interparray(s, key, i1, I...)
-
-clear!(s::InterpStack) = (map(clear!, s.stacks); nothing)
-
-
+centerval(vals) = vals[length(vals) ÷ 2 + 1]
 
 # Series loading code
 
@@ -107,30 +78,37 @@ nlayers(bspline::BSpline) = nlayers(bspline.degree)
 nlayers(::NoInterp) = 1
 nlayers(::Interpolations.Degree{X}) where X = X
 
-function interpseries(series::GeoSeries, newtimeseries, interpolators)
+function interpseries(series::GeoSeries, dates; interptypes, step=step(dates))
     # Convert series to mutable CachedStack that will become GeoStacks 
     # the first time they are accessed. Interpolated sliced will share 
     # CachedStack so they are only loaded once.
     origtimeseries = index(series, Ti)
-    ro_series = CachedStack.(series)
-    T = Union{eltype(ro_series),Missing}
-    interpseries = Vector(undef, length(newtimeseries))
-    for (i, t) in enumerate(newtimeseries)
+    T = Union{eltype(series),Missing}
+    interpseries = map(dates) do t
         # Find the t in the serie Ti index 
-        x = searchsortedlast(index(ro_series, Ti), t)
-        # For now we only allow length degree 2 interpolators,
+        x = searchsortedlast(index(series, Ti), t)
+        # For now we only allow length degree 2 interptypes,
         # using 2 stacks.
-        stacks = if x <= firstindex(ro_series)
+        stacks = if x <= firstindex(series)
             error("Include dates at least 1 period before the first in the required dates")
-        elseif x >= lastindex(ro_series)
+        elseif x >= lastindex(series)
             error("Inlcude dates at least 1 period beyond the last in the required dates")
         else
-            T[ro_series[x], ro_series[x+1]]
+            T[series[x], series[x+1]]
         end
-        frac = calcfrac(origtimeseries[x], origtimeseries[x], t)
-        interpseries[i] = InterpStack(stacks, interpolators, frac)
+        frac = calcfrac(origtimeseries[x], origtimeseries[x] + Base.step(origtimeseries), t)
+        interpstack(stacks, interptypes, frac)
     end
-    GeoSeries(interpseries, Ti(newtimeseries); childtype=InterpStack)
+    return GeoSeries(interpseries, timedim(dates, step))
+end
+
+timedim(dates::Dimension, step) = dates
+function timedim(dates::AbstractRange, step)
+    Ti(dates; mode=Sampled(order=Ordered(), span=Regular(step), sampling=Intervals(Start())))
+end
+function timedim(dates::AbstractArray, step)
+    span = Explicit(permutedims(hcat(dates, dates .+ step)))
+    return Ti(dates; mode=Sampled(order=Ordered(), span=span, sampling=Intervals(Start())))
 end
 
 calcfrac(a, b, x) = (x - a) / (b - a)
