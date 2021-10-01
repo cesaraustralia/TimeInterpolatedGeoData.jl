@@ -5,21 +5,21 @@ using GeoData,
       Dates, 
       StaticArrays, 
       OffsetArrays, 
-      RasterDataSources,
-      ArchGDAL, 
-      NCDatasets
+      RasterDataSources
 
-using GeoData: StandardIndices, readwindowed
+using GeoData: StandardIndices
 
-export CachedStack 
-
-export InterpStack, InterpArray
-
-export MinMaxInterpStack, MinMaxSpec
+export CachedStack, InterpArray, MinMaxInterpolator
 
 export Cosine, HypTan
 
-export interpseries, minmaxseries, meandayminmaxseries
+export interpstack, minmaxinterpstack 
+
+export interpseries, minmaxseries, meanday_minmaxseries
+
+const GD = GeoData
+const DD = GeoData.DimensionalData
+const DA = GeoData.DiskArrays
 
 include("cachedstack.jl")
 include("interpstack.jl")

@@ -8,10 +8,10 @@ the weights, as if it is cyclic between two values.
 """
 struct Cosine <: Interpolations.Degree{1} end
 
-Interpolations.positions(::Cosine, ax::AbstractUnitRange{<:Integer}, x) =
+function Interpolations.positions(::Cosine, ax::AbstractUnitRange{<:Integer}, x)
     Interpolations.positions(Linear(), ax, x)
-
-Interpolations.value_weights(::Cosine, δx) = begin
+end
+function Interpolations.value_weights(::Cosine, δx)
     # calculate the fraction from a sin
     cosfrac = -cos(π * δx)
     # normalise between 0 and 1
@@ -29,7 +29,7 @@ Similar to a `Linear` interpolator, but using hyperbolic tangent to
 calculate the weights. It has a multiplier `X` that controls how long the
 curve is near each index. This is automatically scaled so the max and min 
 values are always 0 and 1 for all `X`. At the limits, HypTan is essentially 
-`Linear` and `NoInterp`. 
+`Linear` and `NoInterp`.
 
 `HypTan{0}` will error, instead uses `Linear` - which is identical.
 """
@@ -38,10 +38,10 @@ HypTan() = HypTan{2}()
 HypTan{X}() where X = HypTan{X,1 / tanh(π * X / 2)}()
 HypTan{0}() = Linear()
 
-Interpolations.positions(::HypTan, ax::AbstractUnitRange{<:Integer}, x) =
+function Interpolations.positions(::HypTan, ax::AbstractUnitRange{<:Integer}, x)
     Interpolations.positions(Linear(), ax, x)
-
-Interpolations.value_weights(ht::HypTan{X,S}, δx) where {X,S} = begin
+end
+function Interpolations.value_weights(ht::HypTan{X,S}, δx) where {X,S}
     # calculate the fraction from a sin
     hypfrac = tanh(X * π * (δx - 0.5)) * S
     # normalise between 0 and 1
