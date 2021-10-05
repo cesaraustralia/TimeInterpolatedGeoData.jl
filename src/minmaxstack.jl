@@ -60,8 +60,6 @@ frac(mm::MinMaxFrac) = mm.frac
 indices(mm::MinMaxFrac) = mm.indices
 interptype(mm::MinMaxFrac) = mm.interptype
 
-Base.keys(mm::MinMaxInterpolator) = Base.keys(mm.times)
-
 function minmaxarray(stacks::OffsetArray, mm_fracs::NamedTuple, key::Symbol)
     if key in keys(mm_fracs)
         # Min/max interpolation key
@@ -69,9 +67,6 @@ function minmaxarray(stacks::OffsetArray, mm_fracs::NamedTuple, key::Symbol)
         frac = mm_frac.frac
         itype = interptype(mm_frac)
         layers = map((k, i) -> stacks[i][k], keys(mm_frac.indices), mm_frac.indices)
-        if frac < 1
-            frac += 1
-        end
         A1 = first(layers)
         data = map(parent, layers)
         iA = InterpArray(data, itype, frac)
@@ -122,7 +117,7 @@ function minmaxstack(
         if key in keys(mm_fracs)
             minmaxarray(stacks, mm_fracs, key)
         else
-            interparray(stacks, interptypes, frac + 1, key)
+            interparray(stacks, interptypes, frac, key)
         end
     end
     return GeoStack(layers)

@@ -35,8 +35,13 @@ values are always 0 and 1 for all `X`. At the limits, HypTan is essentially
 """
 struct HypTan{X,S} <: Interpolations.Degree{1} end
 HypTan() = HypTan{2}()
-HypTan{X}() where X = HypTan{X,1 / tanh(π * X / 2)}()
-HypTan{0}() = Linear()
+function HypTan{X}() where X 
+    if X == 0
+        Linear()
+    else
+        HypTan{X,1 / tanh(π * X / 2)}()
+    end
+end
 
 function Interpolations.positions(::HypTan, ax::AbstractUnitRange{<:Integer}, x)
     Interpolations.positions(Linear(), ax, x)

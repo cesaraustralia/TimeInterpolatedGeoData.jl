@@ -43,11 +43,6 @@ Base.copy!(dst::AbstractArray, src::InterpArray) = dst .= src
 Base.size(A::InterpArray) = Base.size(first(A.arrays))
 Base.size(A::InterpArray, dims::Int) = Base.size(first(A.arrays), dims)
 function Base.getindex(A::InterpArray, i1::StandardIndices, I::StandardIndices...)
-    data = [map(a -> a[i1, I...], arrays(A))...]
-    int = interpolate(data, interptype(A))
-    return collect(int(frac(A)))
-end
-function Base.getindex(A::InterpArray, i1::Int, I::Int...)
     Vector(map(a -> a[i1, I...], arrays(A)))[A.weights]
 end
 
@@ -65,7 +60,7 @@ end
 function interpstack(stacks, interptypes, frac)
     stackkeys = keys(first(stacks))
     data = map(stackkeys) do key
-        parent(interparray(stacks, interptypes, frac + 1, key))
+        parent(interparray(stacks, interptypes, frac, key))
     end |> NamedTuple{stackkeys}
     return GeoStack(first(stacks); data=data)
 end

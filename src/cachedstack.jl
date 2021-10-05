@@ -54,9 +54,8 @@ end
 
 # Clear
 
-clear!(stack::AbstractGeoStack) = nothing
 clear!(stack::AbstractGeoStack) = clear(data(stack))
-clear!(stack::NamedTuple) = nothing
+clear!(stack) = nothing
 function clear!(stack::CachedStack) 
     for k in keys(cache(stack))
         delete!(cache(cache), k)
