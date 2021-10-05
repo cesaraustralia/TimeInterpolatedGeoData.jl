@@ -57,6 +57,23 @@ function interparray(stacks, interptypes, frac, key::Symbol)
     end
 end
 
+"""
+    interpstack(stacks, interptypes, frac)
+
+# Arguments
+
+- `stack`: a `Tuple` of `AbstractGeoStack`, usually of length 2.
+- `interptypes`: a `NamedTuple` connecting stack layer name with an Interpolations.jl `InterpType`.
+    These are used for other layers used with the min/max layers.
+- `frac`: The fractional value, between `0` and `1`, to interpolate to if the first stack
+    is at `0` and the second stack is at `1`.
+
+# Example
+
+```julia
+istack = interpstack((stack1, stack2), (a=BSpline(Linear()), b=BSpline(Cosine())), 0.25)
+```
+"""
 function interpstack(stacks, interptypes, frac)
     stackkeys = keys(first(stacks))
     data = map(stackkeys) do key
@@ -73,6 +90,20 @@ nlayers(bspline::BSpline) = nlayers(bspline.degree)
 nlayers(::NoInterp) = 1
 nlayers(::Interpolations.Degree{X}) where X = X
 
+"""
+    interpseries(series::GeoSeries, dates; interptypes, step=step(dates))
+
+Generate a an interpolated `GeoSeries` from `series` for each date/time in `dates`.
+
+`dates` must define `step` if `step` kw is not passed in. 
+An `AbstractRange` or a DimensionalData.jl `Dimension` can also be used.
+
+# Arguments
+
+- `series`: a `GeoSeries` of `GeoStack`, with a `Regular` `Sampled` `Ti` dimension.
+- `dates`: `AbstractVector` of dates
+- `interptypes`: a `NamedTuple` connecting a stack layer name with an Interpolations.jl `InterpType`.
+"""
 function interpseries(series::GeoSeries, dates; interptypes, step=step(dates))
     # Convert series to mutable CachedStack that will become GeoStacks 
     # the first time they are accessed. Interpolated sliced will share 

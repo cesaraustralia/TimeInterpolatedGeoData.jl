@@ -5,5 +5,5 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/rafaqz/TimeInterpolatedGeoData.jl.git",
+    repo = "github.com/cesaraustralia/TimeInterpolatedGeoData.jl.git",
 )

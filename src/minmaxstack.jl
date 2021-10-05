@@ -8,7 +8,7 @@ Specifies the time that correspond to the daily minimum and maximum.
 - `times`: a length 2 `NamedTuple` where the keys correspond to the layer names for the
     minumum and maximum values, and the values specify the offset in hours at which they occur.
 - `interptype`: An Interpolations.jl `InterpType`. This package provides [`Cosine`](@ref)
-    and [`Hyptan`](@ref).
+    and [`HypTan`](@ref).
 """
 struct MinMaxInterpolator{T,IM}
     times::T
@@ -83,7 +83,7 @@ end
 
 An `AbstractGeoStack` that Provides interpolation for a value (often temperature)
 that usually has minimum and maximum values provided in separate layers.
-Other layers in the stack are interpolated, or not, as for [`InterpStack`](@ref).
+Other layers in the stack are interpolated, or not, as for [`interpstack`](@ref).
 
 # Arguments
 
@@ -129,7 +129,8 @@ end
 Generate a `GeoSeries` of `MinMaxStack` from `series` for each date/time in `dates`.
 Min/max interpolators are defined in the `mm_interpolators`, a `NamedTuple` of
 
-`dates` must define `step`. An `AbstractRange` or a DimensionalData.lj `Dimension` can also be used.
+`dates` must define `step` if `step` kw is not passed in. 
+An `AbstractRange` or a DimensionalData.jl `Dimension` can also be used.
 
 # Arguments
 
