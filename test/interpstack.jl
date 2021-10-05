@@ -13,11 +13,17 @@ include(joinpath(dirname(pathof(TimeInterpolatedGeoData)), "../test/test_utils.j
     @test calcfrac(1, 2, 1.5) == 0.5
     @test calcfrac(1, 2, 2.0) == 1.0
 
+    @test Interpolations.value_weights(Linear(), 0)[1] == 1.0
     @test Interpolations.value_weights(Cosine(), 0)[1] == 1.0
+    @test Interpolations.value_weights(Linear(), 0.5)[1] ≈ 0.5
     @test Interpolations.value_weights(Cosine(), 0.5)[1] ≈ 0.5
+    @test Interpolations.value_weights(Linear(), 1)[1] == 0.0
     @test Interpolations.value_weights(Cosine(), 1)[1] == 0.0
+    @test Interpolations.value_weights(Linear(), 0)[2] == 0.0
     @test Interpolations.value_weights(Cosine(), 0)[2] == 0.0
+    @test Interpolations.value_weights(Linear(), 0.5)[2] ≈ 0.5
     @test Interpolations.value_weights(Cosine(), 0.5)[2] ≈ 0.5
+    @test Interpolations.value_weights(Linear(), 1)[2] == 1.0
     @test Interpolations.value_weights(Cosine(), 1)[2] == 1.0
 
     @test Interpolations.value_weights(HypTan(), 0)[1] == 1.0
