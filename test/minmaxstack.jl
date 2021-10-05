@@ -1,4 +1,4 @@
-using TimeInterpolatedGeoData, Test, Dates, Interpolations, GeoData, RasterDataSources
+using TimeInterpolatedGeoData, Test, Dates, Interpolations, GeoData
 using GeoData: set
 
 include(joinpath(dirname(pathof(TimeInterpolatedGeoData)), "../test/test_utils.jl"))
@@ -139,9 +139,7 @@ end
 @testset "WorldClim Climate meanday_minmaxseries" begin
     layers = (:tmin, :tmax)
     months = 1:12
-    getraster(WorldClim{Climate}, layers; month=months)
-
-    ser = series(WorldClim{Climate}, layers; month=Jan:Dec)
+    ser = series(WorldClim{Climate}, layers; month=months)
     ser = set(ser, :month => Ti(DateTime(2001, 1, 1):Month(1):DateTime(2001, 12, 1)))
     # We use a DimensionalData dim instead of a vector of dates because a
     # Dim can have a step size with irregular spaced data - here 1 Hour.

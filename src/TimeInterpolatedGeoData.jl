@@ -4,8 +4,7 @@ using GeoData,
       Interpolations, 
       Dates, 
       StaticArrays, 
-      OffsetArrays, 
-      RasterDataSources
+      OffsetArrays 
 
 using GeoData: StandardIndices
 
